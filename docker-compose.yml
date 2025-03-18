@@ -1,0 +1,45 @@
+networks:
+  test:
+
+volumes:
+  pg_data:
+
+services:
+  postgresql-uuid-test:
+    build:
+      dockerfile: postgresql-uuid-test/Dockerfile
+    image: postgresql-uuid-test
+    container_name: postgresql-uuid-test
+    environment:
+      - POSTGRES_HOST=pg-test
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=test
+      - POSTGRES_USER=test
+      - POSTGRES_PASSWORD=test
+    command:
+      - ${COMMAND:-}
+    networks:
+      - test
+    volumes:
+      - ./_data:/data
+    depends_on:
+      pg-test:
+        condition: service_healthy
+
+  pg-test:
+    image: postgres:14.0-alpine
+    container_name: pg-test
+    environment:
+      - POSTGRES_DB=test
+      - POSTGRES_USER=test
+      - POSTGRES_PASSWORD=test
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    networks:
+      - test
+    volumes:
+      - pg_data:/var/lib/postgresql/data
